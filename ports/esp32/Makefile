@@ -14,8 +14,10 @@ FROZEN_MPY_DIR = modules
 # include py core make definitions
 include $(TOP)/py/py.mk
 
-PORT ?= /dev/ttyUSB0
-BAUD ?= 460800
+# PORT ?= /dev/ttyUSB0
+# BAUD ?= 460800
+PORT ?= /dev/tty.SLAB_USBtoUART
+BAUD ?= 961200
 FLASH_MODE ?= dio
 FLASH_FREQ ?= 40m
 FLASH_SIZE ?= 4MB
@@ -165,6 +167,7 @@ SRC_C = \
 	network_lan.c \
 	modsocket.c \
 	modesp.c \
+	esp_espnow.c \
 	esp32_ulp.c \
 	modesp32.c \
 	moduhashlib.c \
@@ -667,7 +670,7 @@ APP_LD_ARGS += -L$(dir $(LIBGCC_FILE_NAME)) -lgcc
 APP_LD_ARGS += -L$(dir $(LIBSTDCXX_FILE_NAME)) -lstdc++
 APP_LD_ARGS += $(LIBC_LIBM)
 APP_LD_ARGS += $(ESPCOMP)/esp32/libhal.a
-APP_LD_ARGS += -L$(ESPCOMP)/esp32/lib -lcore -lnet80211 -lphy -lrtc -lpp -lwpa -lsmartconfig -lcoexist -lwps -lwpa2
+APP_LD_ARGS += -L$(ESPCOMP)/esp32/lib -lcore -lnet80211 -lphy -lrtc -lpp -lwpa -lespnow -lsmartconfig -lcoexist -lwps -lwpa2
 APP_LD_ARGS += $(OBJ)
 APP_LD_ARGS += --end-group
 
