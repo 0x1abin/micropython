@@ -96,6 +96,8 @@ INC_ESPCOMP += -I$(ESPCOMP)/app_trace/include
 INC_ESPCOMP += -I$(ESPCOMP)/app_update/include
 INC_ESPCOMP += -I$(ESPCOMP)/pthread/include
 INC_ESPCOMP += -I$(ESPCOMP)/smartconfig_ack/include
+INC_ESPCOMP += -I$(ESPCOMP)/lcd/Adafruit-GFX-Library
+INC_ESPCOMP += -I$(ESPCOMP)/lcd/include
 
 # these flags are common to C and C++ compilation
 CFLAGS_COMMON = -Os -ffunction-sections -fdata-sections -fstrict-volatile-bitfields \
@@ -176,6 +178,7 @@ SRC_C = \
 	machine_wdt.c \
 	mpthreadport.c \
 	machine_rtc.c \
+	moddisplay.c \
 	$(SRC_MOD)
 
 EXTMOD_SRC_C = $(addprefix extmod/,\
@@ -438,6 +441,17 @@ ESPIDF_SMARTCONFIG_ACK_O = $(addprefix $(ESPCOMP)/smartconfig_ack/,\
 	smartconfig_ack.o \
 	)
 
+$(BUILD)/$(ESPCOMP)/lcd/Adafruit-GFX-Library/%.o: CXXFLAGS += -D__AVR_ATtiny85__ -Wno-strict-aliasing
+$(BUILD)/$(ESPCOMP)/lcd/%.o: CFLAGS += -Wno-strict-aliasing
+ESPIDF_LCD_O = $(addprefix $(ESPCOMP)/lcd/,\
+	Adafruit-GFX-Library/Adafruit_GFX.o \
+	iot_lcd.o \
+	spi_lcd.o \
+	font7s.o \
+	glcdfont.o \
+	lcd_interface.o \
+	)
+
 ESPIDF_SPI_FLASH_O = $(addprefix $(ESPCOMP)/spi_flash/,\
 	flash_mmap.o \
 	partition.o \
@@ -642,6 +656,7 @@ OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SMARTCONFIG_ACK_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_SPI_FLASH_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_ULP_O))
 OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_WPA_SUPPLICANT_O))
+OBJ_ESPIDF += $(addprefix $(BUILD)/, $(ESPIDF_LCD_O))
 ################################################################################
 # Main targets
 
