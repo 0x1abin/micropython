@@ -40,6 +40,8 @@
 
 const mp_obj_type_t display_lcd_type;
 
+uint16_t _fg, _bg;
+
 
 typedef struct _machine_hw_spi_obj_t {
     mp_obj_base_t base;
@@ -95,6 +97,26 @@ STATIC mp_obj_t display_lcd_color565(size_t n_args, const mp_obj_t *pos_args, mp
     return MP_OBJ_NEW_SMALL_INT(color16);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_color565_obj, 3, display_lcd_color565);
+
+//-----------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_setRot(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_rot, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+  	uint8_t rot = args[0].u_int;
+  	if ((rot < 0) || (rot > 3)) rot = 0;
+
+  	lcd_setRotation(self->lcd_obj, rot);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setRot_obj, 1, display_lcd_setRot);
 
 //----------------------------------------------------------------
 STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -233,16 +255,25 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawCircle_obj, 3, display_lcd_dra
 STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
     const mp_arg_t allowed_args[] = {
-        { MP_QSTR_x,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_y,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_r,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
-        { MP_QSTR_fillcolor,                MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_text,         MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_x,                              MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,                              MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_color,                          MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_rotate,       MP_ARG_KW_ONLY  | MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_transparent,  MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_fixedwidth,   MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_wrap,         MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
     };
     display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+	uint16_t x = args[1].u_int;
+    uint16_t y = args[2].u_int;
+    char *st = (char *)mp_obj_str_get_str(args[0].u_obj);
+
+    lcd_drawString(self->lcd_obj, st, x, y);
 
 	// int16_t x = args[0].u_int;
     // int16_t y = args[1].u_int;
@@ -280,6 +311,7 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     } else {
         display_lcd_init_internal(self, 1, true);
     }
+    lcd_setRotation(self->lcd_obj, 90);
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -287,7 +319,8 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
 //================================================================
 STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     // instance methods
-    // { MP_ROM_QSTR(MP_QSTR_init),				MP_ROM_PTR(&display_tft_init_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_init),				MP_ROM_PTR(&display_lcd_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_orient),				MP_ROM_PTR(&display_lcd_setRot_obj) },
     { MP_ROM_QSTR(MP_QSTR_Pixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
     { MP_ROM_QSTR(MP_QSTR_line),	        MP_ROM_PTR(&display_lcd_drawLine_obj) },
