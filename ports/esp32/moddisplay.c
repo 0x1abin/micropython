@@ -99,24 +99,24 @@ STATIC mp_obj_t display_lcd_color565(size_t n_args, const mp_obj_t *pos_args, mp
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_color565_obj, 3, display_lcd_color565);
 
 //-----------------------------------------------------------------------------------------------
-STATIC mp_obj_t display_lcd_setRot(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t display_lcd_setRotation(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
     const mp_arg_t allowed_args[] = {
-        { MP_QSTR_rot, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_rotation, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
     };
     display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-  	uint8_t rot = args[0].u_int;
-  	if ((rot < 0) || (rot > 3)) rot = 0;
+  	uint8_t rotation = args[0].u_int;
+  	if ((rotation < 0) || (rotation > 3)) rotation = 0;
 
-  	lcd_setRotation(self->lcd_obj, rot);
+  	lcd_setRotation(self->lcd_obj, rotation);
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setRot_obj, 1, display_lcd_setRot);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setRotation_obj, 1, display_lcd_setRotation);
 
 //----------------------------------------------------------------
 STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -320,7 +320,7 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
 STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     // instance methods
     // { MP_ROM_QSTR(MP_QSTR_init),				MP_ROM_PTR(&display_lcd_init_obj) },
-    { MP_ROM_QSTR(MP_QSTR_orient),				MP_ROM_PTR(&display_lcd_setRot_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setRotation),				MP_ROM_PTR(&display_lcd_setRotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_Pixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
     { MP_ROM_QSTR(MP_QSTR_line),	        MP_ROM_PTR(&display_lcd_drawLine_obj) },
