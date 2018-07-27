@@ -99,6 +99,40 @@ STATIC mp_obj_t display_lcd_color565(size_t n_args, const mp_obj_t *pos_args, mp
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_color565_obj, 3, display_lcd_color565);
 
 //-----------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_setCursor(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,            MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,            MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+    if (setupDevice(self)) return mp_const_none;
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+  	int16_t x = args[0].u_int;
+    int16_t y = args[1].u_int;
+
+    lcd_setCursor(self->lcd_obj, x, y);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setCursor_obj, 2, display_lcd_setCursor);
+
+//-------------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_getCursor(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    mp_obj_t tuple[2];
+
+    tuple[0] = mp_obj_new_int(lcd_getCursorX());
+    tuple[1] = mp_obj_new_int(lcd_getCursorY());
+
+    return mp_obj_new_tuple(2, tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_getCursor_obj, 0, display_lcd_getCursor);
+
+//-----------------------------------------------------------------------------------------------
 STATIC mp_obj_t display_lcd_setRotation(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
     const mp_arg_t allowed_args[] = {
@@ -320,6 +354,8 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
 STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     // instance methods
     // { MP_ROM_QSTR(MP_QSTR_init),				MP_ROM_PTR(&display_lcd_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setCursor),           MP_ROM_PTR(&display_lcd_setCursor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getCursor),           MP_ROM_PTR(&display_lcd_getCursor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setRotation),				MP_ROM_PTR(&display_lcd_setRotation_obj) },
     { MP_ROM_QSTR(MP_QSTR_Pixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
