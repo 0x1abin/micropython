@@ -38,27 +38,19 @@
 #include "driver/spi_master.h"
 #include "lcd_interface.h"
 
-inline uint16_t color888to565(uint32_t color888)
+#define COLOR_TO_MTK_COLOR_SIMUL(color) ((((color) >> 19) & 0x1f) << 11) \
+                                            |((((color) >> 10) & 0x3f) << 5) \
+                                            |(((color) >> 3) & 0x1f)
+                                            
+static uint16_t color888to565(uint32_t color888)
 {
-    uint16_t color565 = 0;
- 
-	uint8_t r   = (color888 & 0xf800)   >> 19;
-	uint8_t g = (color888 & 0x07e0) >> 10;
-	uint8_t b  = (color888 & 0x001f)  >> 3;
-
-	color565 = (r << 11) + (g << 5) + (b << 0);
+	uint16_t color565 = COLOR_TO_MTK_COLOR_SIMUL(color888);
 	return color565;
 }
 
 const mp_obj_type_t display_lcd_type;
 
-// typedef struct{
-// 	uint8_t r;
-// 	uint8_t g;
-// 	uint8_t b;
-// } uint32_t ;
-
-uint16_t _fg, _bg;
+uint32_t _fg, _bg;
 
 typedef struct _machine_hw_spi_obj_t {
     mp_obj_base_t base;
@@ -223,14 +215,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setTextColor_obj, 0, display_lcd_s
 //--------------------------------------------------
 STATIC mp_obj_t display_lcd_get_bg(mp_obj_t self_in)
 {
-    return mp_obj_new_int(color888to565(_bg));
+    return mp_obj_new_int(_bg);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_lcd_get_bg_obj, display_lcd_get_bg);
 
 //--------------------------------------------------
 STATIC mp_obj_t display_lcd_get_fg(mp_obj_t self_in)
 {
-    return mp_obj_new_int(color888to565(_fg));
+    return mp_obj_new_int(_fg);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_lcd_get_fg_obj, display_lcd_get_fg);
 
@@ -269,7 +261,7 @@ STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, m
 	mp_int_t x = args[0].u_int;
     mp_int_t y = args[1].u_int;
     if (args[2].u_int >= 0) {
-        color = color888to565(args[2].u_int);
+        color = (args[2].u_int);
     }
     lcd_drawPixel(self->lcd_obj, x, y, color888to565(color));
     return mp_const_none;
@@ -452,7 +444,8 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     } else {
         display_lcd_init_internal(self, 1, true);
     }
-    // lcd_setRotation(self->lcd_obj, 90);
+    // TODO: rotation: 0~3 need be changed to 0~360
+    lcd_setRotation(self->lcd_obj, 1);
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -461,25 +454,25 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
 STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     // instance methods
     // { MP_ROM_QSTR(MP_QSTR_init),				MP_ROM_PTR(&display_lcd_init_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_setCursor),           MP_ROM_PTR(&display_lcd_setCursor_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_getCursor),           MP_ROM_PTR(&display_lcd_getCursor_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_setRotation),			MP_ROM_PTR(&display_lcd_setRotation_obj) },
-    // // { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_setColor),            MP_ROM_PTR(&display_lcd_setColor_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_setTextColor),        MP_ROM_PTR(&display_lcd_setColor_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_get_fg),				MP_ROM_PTR(&display_lcd_get_fg_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_get_bg),				MP_ROM_PTR(&display_lcd_get_bg_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_set_fg),				MP_ROM_PTR(&display_lcd_set_fg_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_set_bg),				MP_ROM_PTR(&display_lcd_set_bg_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_Pixel),	            MP_ROM_PTR(&display_lcd_drawPixel_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_line),	            MP_ROM_PTR(&display_lcd_drawLine_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_triangle),	        MP_ROM_PTR(&display_lcd_drawTriangle_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_circle),	            MP_ROM_PTR(&display_lcd_drawCircle_obj) },
-    // // { MP_ROM_QSTR(MP_QSTR_rect),	            MP_ROM_PTR(&display_lcd_drawRect_obj) },
-    // // { MP_ROM_QSTR(MP_QSTR_roundrect),	    MP_ROM_PTR(&display_lcd_drawRoundRect_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_print),	            MP_ROM_PTR(&display_lcd_drawString_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_clear),				MP_ROM_PTR(&display_lcd_fillScreenBlack_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setCursor),           MP_ROM_PTR(&display_lcd_setCursor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getCursor),           MP_ROM_PTR(&display_lcd_getCursor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setRotation),			MP_ROM_PTR(&display_lcd_setRotation_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setColor),            MP_ROM_PTR(&display_lcd_setColor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setTextColor),        MP_ROM_PTR(&display_lcd_setColor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_fg),				MP_ROM_PTR(&display_lcd_get_fg_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_bg),				MP_ROM_PTR(&display_lcd_get_bg_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_fg),				MP_ROM_PTR(&display_lcd_set_fg_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_bg),				MP_ROM_PTR(&display_lcd_set_bg_obj) },
+    { MP_ROM_QSTR(MP_QSTR_Pixel),	            MP_ROM_PTR(&display_lcd_drawPixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
+    { MP_ROM_QSTR(MP_QSTR_line),	            MP_ROM_PTR(&display_lcd_drawLine_obj) },
+    { MP_ROM_QSTR(MP_QSTR_triangle),	        MP_ROM_PTR(&display_lcd_drawTriangle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_circle),	            MP_ROM_PTR(&display_lcd_drawCircle_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_rect),	            MP_ROM_PTR(&display_lcd_drawRect_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_roundrect),	    MP_ROM_PTR(&display_lcd_drawRoundRect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_print),	            MP_ROM_PTR(&display_lcd_drawString_obj) },
+    { MP_ROM_QSTR(MP_QSTR_clear),				MP_ROM_PTR(&display_lcd_fillScreenBlack_obj) },
 
 	{ MP_ROM_QSTR(MP_QSTR_BLACK),				MP_ROM_INT(ILI9341_BLACK) },
 	{ MP_ROM_QSTR(MP_QSTR_NAVY),				MP_ROM_INT(ILI9341_NAVY) },
@@ -501,7 +494,6 @@ STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
 	{ MP_ROM_QSTR(MP_QSTR_GREENYELLOW),			MP_ROM_INT(ILI9341_GREENYELLOW) },
 	{ MP_ROM_QSTR(MP_QSTR_PINK),				MP_ROM_INT(ILI9341_PINK) },
 
-    // { MP_ROM_QSTR(MP_QSTR_color565),	        MP_ROM_PTR(&display_lcd_color565_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_COLOR_BITS16),		MP_ROM_INT(16) },
 	{ MP_ROM_QSTR(MP_QSTR_COLOR_BITS24),		MP_ROM_INT(24) },
 
