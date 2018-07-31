@@ -169,7 +169,7 @@ STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, m
     const mp_arg_t allowed_args[] = {
         { MP_QSTR_x,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
         { MP_QSTR_y,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_color, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_color,                   MP_ARG_INT, { .u_int = -1 } },
     };
     display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
@@ -466,10 +466,10 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
 
     const mp_arg_t allowed_args[] = {
         { MP_QSTR_text,         MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = mp_const_none } },
-        { MP_QSTR_x,                              MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_y,                              MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_x,                              MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_y,                              MP_ARG_INT, { .u_int = -1 } },
         { MP_QSTR_color,                          MP_ARG_INT, { .u_int = -1 } },
-        { MP_QSTR_rotate,       MP_ARG_KW_ONLY  | MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_rotate,                         MP_ARG_INT, { .u_int = -1 } },
         { MP_QSTR_transparent,  MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
         { MP_QSTR_fixedwidth,   MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
         { MP_QSTR_wrap,         MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
@@ -479,8 +479,14 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-	mp_int_t x = args[1].u_int;
-    mp_int_t y = args[2].u_int;
+    mp_int_t x = lcd_getCursorX(self->lcd_obj);
+    mp_int_t y = lcd_getCursorY(self->lcd_obj);
+    if(args[1].u_int >= 0){
+        x = args[1].u_int;
+    }
+    if(args[2].u_int >= 0){
+        y = args[2].u_int;
+    }
     char *st = (char *)mp_obj_str_get_str(args[0].u_obj);
 
     if (args[3].u_int >= 0) {
@@ -592,9 +598,6 @@ STATIC const mp_rom_map_elem_t display_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_display) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_LCD), MP_ROM_PTR(&display_lcd_type) },
-    
-    // { MP_ROM_QSTR(MP_QSTR_start),	 MP_ROM_PTR(&display_start_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_fillScreen),	 MP_ROM_PTR(&display_lcd_fillScreen_obj) },
 };
 
 //===============================================================================
