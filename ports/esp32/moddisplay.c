@@ -649,6 +649,24 @@ STATIC mp_obj_t display_lcd_drawFastHLine(size_t n_args, const mp_obj_t *pos_arg
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawFastHLine_obj, 3, display_lcd_drawFastHLine);
 
 //================================================================
+STATIC mp_obj_t display_lcd_setBrightness(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
+{
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_duty,            MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+  	mp_int_t duty = args[0].u_int;
+    lcd_setBrightness(self->lcd_obj, duty);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setBrightness_obj, 0, display_lcd_setBrightness);
+
+//================================================================
 mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
     enum { ARG_spi};
     static const mp_arg_t allowed_args[] = {
@@ -701,6 +719,8 @@ STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_drawFastVLine),	    MP_ROM_PTR(&display_lcd_drawFastVLine_obj) },
     { MP_ROM_QSTR(MP_QSTR_drawFastHLine),	    MP_ROM_PTR(&display_lcd_drawFastHLine_obj) },
 
+    { MP_ROM_QSTR(MP_QSTR_setBrightness),       MP_ROM_PTR(&display_lcd_setBrightness_obj) },
+    { MP_ROM_QSTR(MP_QSTR_backlight),           MP_ROM_PTR(&display_lcd_setBrightness_obj) },
 
 	{ MP_ROM_QSTR(MP_QSTR_BLACK),				MP_ROM_INT(ILI9341_BLACK) },
 	{ MP_ROM_QSTR(MP_QSTR_NAVY),				MP_ROM_INT(ILI9341_NAVY) },
