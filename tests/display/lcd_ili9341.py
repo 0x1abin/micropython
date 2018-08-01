@@ -35,9 +35,12 @@ lcd.fillRect(180,30,122,10,lcd.BLUE)
 lcd.drawRoundRect(180,50,122,10,4,lcd.BLUE)	  
 lcd.fillRoundRect(180,70,122,10,4,lcd.BLUE)	  
 lcd.print('this is a print text function', 80, 80)	  
+lcd.setTextSize(2)
+lcd.print('this is a print text function', 0, 0)	
+lcd.setTextBounds('this is a print text function', 0, 0)	  
+
 lcd.drawFastVLine(34,34,55,lcd.RED)
 lcd.drawFastHLine(34,34,55,lcd.RED)    
 lcd.clear()		
-
 
 

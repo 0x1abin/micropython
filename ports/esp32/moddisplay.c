@@ -199,6 +199,61 @@ STATIC mp_obj_t display_lcd_setTextSize(size_t n_args, const mp_obj_t *pos_args,
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setTextSize_obj, 0, display_lcd_setTextSize);
 
+//-------------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_getTextBounds(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_str,         MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_x,            MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,            MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    mp_obj_t tuple[4];
+    int16_t x1, y1; 
+    uint16_t w, h; 
+    
+    char *str = (char *)mp_obj_str_get_str(args[0].u_obj);
+    mp_int_t x = args[1].u_int;
+    mp_int_t y = args[2].u_int;
+
+    lcd_getTextBounds(self->lcd_obj, str, x, y, &x1, &y1, &w, &h);
+    tuple[0] = mp_obj_new_int(x1);
+    tuple[1] = mp_obj_new_int(y1);
+    tuple[2] = mp_obj_new_int(w);
+    tuple[3] = mp_obj_new_int(h);
+
+    // lcd_getTextWrap(false);
+
+    return mp_obj_new_tuple(4, tuple);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_getTextBounds_obj, 3, display_lcd_getTextBounds);
+
+//-------------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_getTextWrap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_w,                   MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    bool w = true;
+    if(args[0].u_int >= 0) {
+        w = args[0].u_int;
+    }
+
+    lcd_getTextWrap(self->lcd_obj, w);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_getTextWrap_obj, 0, display_lcd_getTextWrap);
+
 //----------------------------------------------------------------
 STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
@@ -424,7 +479,7 @@ STATIC mp_obj_t display_lcd_fillRect(size_t n_args, const mp_obj_t *pos_args, mp
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t fillcolor = ILI9341_WHITE;   
+    uint32_t fillcolor = ILI9341_WHITE;
 	mp_int_t x = args[0].u_int;
     mp_int_t y = args[1].u_int;
 	mp_int_t w = args[2].u_int;
@@ -523,7 +578,7 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
     if(args[2].u_int >= 0){
         y = args[2].u_int;
     }
-    char *st = (char *)mp_obj_str_get_str(args[0].u_obj);
+    char *str = (char *)mp_obj_str_get_str(args[0].u_obj);
 
     if (args[3].u_int >= 0) {
     	lcd_setTextColor(self->lcd_obj, rgb888to565((args[3].u_int)));
@@ -536,7 +591,7 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
     // if (mp_obj_is_integer(args[6].u_obj)) font_forceFixed = args[6].u_int;
     // if (mp_obj_is_integer(args[7].u_obj)) text_wrap = args[7].u_int;
 
-    lcd_drawString(self->lcd_obj, st, x, y);
+    lcd_drawString(self->lcd_obj, str, x, y);
     
 
     return mp_const_none;
@@ -611,7 +666,7 @@ mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n
     } else {
         display_lcd_init_internal(self, 1, true);
     }
-    // TODO: rotation: 0~3 need be changed to 0~360
+    
     lcd_setRotation(self->lcd_obj, 1);
 
     return MP_OBJ_FROM_PTR(self);
@@ -627,6 +682,8 @@ STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_setColor),            MP_ROM_PTR(&display_lcd_setTextColor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setTextColor),        MP_ROM_PTR(&display_lcd_setTextColor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getTextBounds),       MP_ROM_PTR(&display_lcd_getTextBounds_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getTextWrap),         MP_ROM_PTR(&display_lcd_getTextWrap_obj) },
     { MP_ROM_QSTR(MP_QSTR_drawPixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
     { MP_ROM_QSTR(MP_QSTR_drawLine),	        MP_ROM_PTR(&display_lcd_drawLine_obj) },
