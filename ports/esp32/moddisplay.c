@@ -50,8 +50,6 @@ static uint16_t rgb888to565(uint32_t color888)
 
 const mp_obj_type_t display_lcd_type;
 
-uint32_t _fg=ILI9341_WHITE, _bg=ILI9341_BLACK;
-
 typedef struct _machine_hw_spi_obj_t {
     mp_obj_base_t base;
     spi_host_device_t host;
@@ -85,27 +83,6 @@ STATIC void display_lcd_init_internal(
 {
     self->lcd_obj = lcd_create_obj(host, init_bus);
 }
-
-//----------------------------------------------------------------
-// STATIC mp_obj_t display_lcd_color565(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-
-//     const mp_arg_t allowed_args[] = {
-//         { MP_QSTR_r,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-//         { MP_QSTR_g,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-//         { MP_QSTR_b,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-//     };
-
-// 	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-//     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-// 	uint8_t r = args[0].u_int;
-// 	uint8_t g = args[1].u_int;
-// 	uint8_t b = args[2].u_int;
-//     uint16_t color16 = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-
-//     return MP_OBJ_NEW_SMALL_INT(color16);
-// }
-// STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_color565_obj, 3, display_lcd_color565);
 
 //-----------------------------------------------------------------------------------------------
 STATIC mp_obj_t display_lcd_setCursor(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -152,38 +129,29 @@ STATIC mp_obj_t display_lcd_setRotation(size_t n_args, const mp_obj_t *pos_args,
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-  	uint8_t rotation = args[0].u_int;
-  	if ((rotation < 0) || (rotation > 3)) rotation = 0;
+  	int16_t rotation = args[0].u_int;
+  	if ((rotation < 0) || (rotation > 360)) rotation = 0;
+    switch(rotation)
+    {
+        case 0:
+            rotation = 1;
+            break;
+        case 90:
+            rotation = 2;
+            break;
+        case 180:
+            rotation = 3;
+            break;
+        case 270:
+            rotation = 0;
+            break;
+    }
 
   	lcd_setRotation(self->lcd_obj, rotation);
 
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setRotation_obj, 1, display_lcd_setRotation);
-
-//-------------------------------------------------------------------------------------------------
-STATIC mp_obj_t display_lcd_setColor(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-
-    const mp_arg_t allowed_args[] = {
-        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
-        { MP_QSTR_bcolor,                   MP_ARG_INT, { .u_int = -1 } },
-    };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-
-    if (args[0].u_int >= 0) {
-    	_fg = (args[0].u_int);
-    } else {
-        _fg = (ILI9341_WHITE);
-    }
-
-    if (args[1].u_int >= 0) {
-    	_bg = (args[1].u_int);
-    }
-
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setColor_obj, 0, display_lcd_setColor);
 
 //-------------------------------------------------------------------------------------------------
 STATIC mp_obj_t display_lcd_setTextColor(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -197,11 +165,9 @@ STATIC mp_obj_t display_lcd_setTextColor(size_t n_args, const mp_obj_t *pos_args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t color;
+    uint32_t color = ILI9341_WHITE;
     if (args[0].u_int >= 0) {
         color = (args[0].u_int);
-    } else {
-        color = (_fg);
     }
     lcd_setTextColor(self->lcd_obj, rgb888to565(color));
     if (args[1].u_int >= 0) {
@@ -212,37 +178,26 @@ STATIC mp_obj_t display_lcd_setTextColor(size_t n_args, const mp_obj_t *pos_args
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setTextColor_obj, 0, display_lcd_setTextColor);
 
-//--------------------------------------------------
-STATIC mp_obj_t display_lcd_get_bg(mp_obj_t self_in)
-{
-    return mp_obj_new_int(_bg);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_lcd_get_bg_obj, display_lcd_get_bg);
+//-------------------------------------------------------------------------------------------------
+STATIC mp_obj_t display_lcd_setTextSize(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
-//--------------------------------------------------
-STATIC mp_obj_t display_lcd_get_fg(mp_obj_t self_in)
-{
-    return mp_obj_new_int(_fg);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_lcd_get_fg_obj, display_lcd_get_fg);
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_size,                   MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
-//---------------------------------------------------------------------
-STATIC mp_obj_t display_lcd_set_bg(mp_obj_t self_in, mp_obj_t color_in)
-{
-    uint32_t color = (mp_obj_get_int(color_in));
-    _bg = color;
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t size = 1;
+    if (args[0].u_int >= 0) {
+        size = (args[0].u_int);
+    }
+    lcd_setTextSize(self->lcd_obj, size);
+
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(display_lcd_set_bg_obj, display_lcd_set_bg);
-
-//---------------------------------------------------------------------
-STATIC mp_obj_t display_lcd_set_fg(mp_obj_t self_in, mp_obj_t color_in)
-{
-    uint32_t color = (mp_obj_get_int(color_in));
-    _fg = color;
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(display_lcd_set_fg_obj, display_lcd_set_fg);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setTextSize_obj, 0, display_lcd_setTextSize);
 
 //----------------------------------------------------------------
 STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -250,14 +205,14 @@ STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, m
     const mp_arg_t allowed_args[] = {
         { MP_QSTR_x,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
         { MP_QSTR_y,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_color, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_color,                   MP_ARG_INT, { .u_int = -1 } },
     };
     display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
 	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t color = _fg;
+    uint32_t color = ILI9341_WHITE;
 	mp_int_t x = args[0].u_int;
     mp_int_t y = args[1].u_int;
     if (args[2].u_int >= 0) {
@@ -279,7 +234,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(display_lcd_fillScreen_obj, display_lcd_fillScr
 
 STATIC mp_obj_t display_lcd_clear(mp_obj_t self_in) {
     display_lcd_obj_t *self = self_in;
-    lcd_fillScreen(self->lcd_obj, rgb888to565(_bg));
+    lcd_fillScreen(self->lcd_obj, rgb888to565(ILI9341_BLACK));
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_lcd_clear_obj, display_lcd_clear);
@@ -298,7 +253,7 @@ STATIC mp_obj_t display_lcd_drawLine(size_t n_args, const mp_obj_t *pos_args, mp
 	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t color = _fg;
+    uint32_t color = ILI9341_WHITE;
 	mp_int_t x0 = args[0].u_int;
     mp_int_t y0 = args[1].u_int;
 	mp_int_t x1 = args[2].u_int;
@@ -327,7 +282,7 @@ STATIC mp_obj_t display_lcd_drawTriangle(size_t n_args, const mp_obj_t *pos_args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t color = _fg;   
+    uint32_t color = ILI9341_WHITE;   
 	mp_int_t x0 = args[0].u_int;
     mp_int_t y0 = args[1].u_int;
 	mp_int_t x1 = args[2].u_int;
@@ -359,7 +314,7 @@ STATIC mp_obj_t display_lcd_fillTriangle(size_t n_args, const mp_obj_t *pos_args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t fillcolor = _fg;   
+    uint32_t fillcolor = ILI9341_WHITE;   
 	mp_int_t x0 = args[0].u_int;
     mp_int_t y0 = args[1].u_int;
 	mp_int_t x1 = args[2].u_int;
@@ -388,7 +343,7 @@ STATIC mp_obj_t display_lcd_drawCircle(size_t n_args, const mp_obj_t *pos_args, 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t color = _fg;   
+    uint32_t color = ILI9341_WHITE;   
 	mp_int_t x = args[0].u_int;
     mp_int_t y = args[1].u_int;
 	mp_int_t r = args[2].u_int;
@@ -414,7 +369,7 @@ STATIC mp_obj_t display_lcd_fillCircle(size_t n_args, const mp_obj_t *pos_args, 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    uint32_t fillcolor = _fg;   
+    uint32_t fillcolor = ILI9341_WHITE;   
 	mp_int_t x = args[0].u_int;
     mp_int_t y = args[1].u_int;
 	mp_int_t r = args[2].u_int;
@@ -427,14 +382,130 @@ STATIC mp_obj_t display_lcd_fillCircle(size_t n_args, const mp_obj_t *pos_args, 
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_fillCircle_obj, 3, display_lcd_fillCircle);
 
+STATIC mp_obj_t display_lcd_drawRect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_w,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_h,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t color = ILI9341_WHITE;   
+	mp_int_t x = args[0].u_int;
+    mp_int_t y = args[1].u_int;
+	mp_int_t w = args[2].u_int;
+    mp_int_t h = args[3].u_int;
+    if (args[4].u_int >= 0) 
+    {
+        color = args[4].u_int;     
+    }
+    lcd_drawRect(self->lcd_obj, x, y, w, h, rgb888to565(color));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawRect_obj, 4, display_lcd_drawRect);
+
+STATIC mp_obj_t display_lcd_fillRect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_w,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_h,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_fillcolor,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t fillcolor = ILI9341_WHITE;   
+	mp_int_t x = args[0].u_int;
+    mp_int_t y = args[1].u_int;
+	mp_int_t w = args[2].u_int;
+    mp_int_t h = args[3].u_int;
+    if (args[4].u_int >= 0) 
+    {
+        fillcolor = args[4].u_int;     
+    }
+    lcd_fillRect(self->lcd_obj, x, y, w, h, rgb888to565(fillcolor));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_fillRect_obj, 4, display_lcd_fillRect);
+
+STATIC mp_obj_t display_lcd_drawRoundRect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_w,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_h,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_r,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t color = ILI9341_WHITE;   
+	mp_int_t x = args[0].u_int;
+    mp_int_t y = args[1].u_int;
+	mp_int_t w = args[2].u_int;
+    mp_int_t h = args[3].u_int;
+    mp_int_t r = args[4].u_int;
+    if (args[5].u_int >= 0) 
+    {
+        color = args[5].u_int;     
+    }
+    lcd_drawRoundRect(self->lcd_obj, x, y, w, h, r, rgb888to565(color));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawRoundRect_obj, 5, display_lcd_drawRoundRect);
+
+STATIC mp_obj_t display_lcd_fillRoundRect(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_w,      MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_h,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0}},
+        { MP_QSTR_r,   MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0}},
+        { MP_QSTR_fillcolor,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t fillcolor = ILI9341_WHITE;   
+	mp_int_t x = args[0].u_int;
+    mp_int_t y = args[1].u_int;
+	mp_int_t w = args[2].u_int;
+    mp_int_t h = args[3].u_int;
+    mp_int_t r = args[4].u_int;
+    if (args[5].u_int >= 0) 
+    {
+        fillcolor = args[5].u_int;     
+    }
+    lcd_fillRoundRect(self->lcd_obj, x, y, w, h, r, rgb888to565(fillcolor));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_fillRoundRect_obj, 5, display_lcd_fillRoundRect);
+
 STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
     const mp_arg_t allowed_args[] = {
         { MP_QSTR_text,         MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = mp_const_none } },
-        { MP_QSTR_x,                              MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_y,                              MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_x,                              MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_y,                              MP_ARG_INT, { .u_int = -1 } },
         { MP_QSTR_color,                          MP_ARG_INT, { .u_int = -1 } },
-        { MP_QSTR_rotate,       MP_ARG_KW_ONLY  | MP_ARG_INT, { .u_int = -1 } },
+        { MP_QSTR_rotate,                         MP_ARG_INT, { .u_int = -1 } },
         { MP_QSTR_transparent,  MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
         { MP_QSTR_fixedwidth,   MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
         { MP_QSTR_wrap,         MP_ARG_KW_ONLY  | MP_ARG_OBJ, { .u_obj = mp_const_none } },
@@ -444,16 +515,22 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-	mp_int_t x = args[1].u_int;
-    mp_int_t y = args[2].u_int;
+    mp_int_t x = lcd_getCursorX(self->lcd_obj);
+    mp_int_t y = lcd_getCursorY(self->lcd_obj);
+    if(args[1].u_int >= 0){
+        x = args[1].u_int;
+    }
+    if(args[2].u_int >= 0){
+        y = args[2].u_int;
+    }
     char *st = (char *)mp_obj_str_get_str(args[0].u_obj);
 
     if (args[3].u_int >= 0) {
     	lcd_setTextColor(self->lcd_obj, rgb888to565((args[3].u_int)));
     }
-    else{
-    	lcd_setTextColor(self->lcd_obj, rgb888to565(_fg));
-    }
+    // else{
+    // 	lcd_setTextColor(self->lcd_obj, rgb888to565(ILI9341_WHITE));
+    // }
     // if (args[4].u_int >= 0) font_rotate = args[4].u_int;
     // if (mp_obj_is_integer(args[5].u_obj)) font_transparent = args[5].u_int;
     // if (mp_obj_is_integer(args[6].u_obj)) font_forceFixed = args[6].u_int;
@@ -465,6 +542,56 @@ STATIC mp_obj_t display_lcd_drawString(size_t n_args, const mp_obj_t *pos_args, 
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawString_obj, 1, display_lcd_drawString);
+
+STATIC mp_obj_t display_lcd_drawFastVLine(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_h,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t color = ILI9341_WHITE;
+	mp_int_t x0 = args[0].u_int;
+    mp_int_t y0 = args[1].u_int;
+	mp_int_t h = args[2].u_int;
+    if(args[3].u_int >= 0){
+        color = args[3].u_int;
+    }
+    lcd_drawFastVLine(self->lcd_obj, x0, y0, h, rgb888to565(color));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawFastVLine_obj, 3, display_lcd_drawFastVLine);
+
+STATIC mp_obj_t display_lcd_drawFastHLine(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+
+    const mp_arg_t allowed_args[] = {
+        { MP_QSTR_x,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_y,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_w,     MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
+        { MP_QSTR_color,                    MP_ARG_INT, { .u_int = -1 } },
+    };
+    display_lcd_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
+
+	mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    uint32_t color = ILI9341_WHITE;
+	mp_int_t x0 = args[0].u_int;
+    mp_int_t y0 = args[1].u_int;
+	mp_int_t w = args[2].u_int;
+    if(args[3].u_int >= 0){
+        color = args[3].u_int;
+    }
+    lcd_drawFastHLine(self->lcd_obj, x0, y0, w, rgb888to565(color));
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_drawFastHLine_obj, 3, display_lcd_drawFastHLine);
 
 //================================================================
 mp_obj_t display_lcd_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
@@ -497,24 +624,26 @@ STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_setCursor),           MP_ROM_PTR(&display_lcd_setCursor_obj) },
     { MP_ROM_QSTR(MP_QSTR_getCursor),           MP_ROM_PTR(&display_lcd_getCursor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setRotation),			MP_ROM_PTR(&display_lcd_setRotation_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
-    { MP_ROM_QSTR(MP_QSTR_setColor),            MP_ROM_PTR(&display_lcd_setColor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setColor),            MP_ROM_PTR(&display_lcd_setTextColor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setTextColor),        MP_ROM_PTR(&display_lcd_setTextColor_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_fg),				MP_ROM_PTR(&display_lcd_get_fg_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_bg),				MP_ROM_PTR(&display_lcd_get_bg_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_fg),				MP_ROM_PTR(&display_lcd_set_fg_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_bg),				MP_ROM_PTR(&display_lcd_set_bg_obj) },
-    { MP_ROM_QSTR(MP_QSTR_drawPixel),	            MP_ROM_PTR(&display_lcd_drawPixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawPixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
-    { MP_ROM_QSTR(MP_QSTR_drawLine),	            MP_ROM_PTR(&display_lcd_drawLine_obj) },
-    { MP_ROM_QSTR(MP_QSTR_drawTriangle),	        MP_ROM_PTR(&display_lcd_drawTriangle_obj) },
-    { MP_ROM_QSTR(MP_QSTR_fillTriangle),	        MP_ROM_PTR(&display_lcd_fillTriangle_obj) },
-    { MP_ROM_QSTR(MP_QSTR_drawCircle),	            MP_ROM_PTR(&display_lcd_drawCircle_obj) },
-    { MP_ROM_QSTR(MP_QSTR_fillcircle),	            MP_ROM_PTR(&display_lcd_fillCircle_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_rect),	            MP_ROM_PTR(&display_lcd_drawRect_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_roundrect),	    MP_ROM_PTR(&display_lcd_drawRoundRect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawLine),	        MP_ROM_PTR(&display_lcd_drawLine_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawTriangle),	    MP_ROM_PTR(&display_lcd_drawTriangle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillTriangle),	    MP_ROM_PTR(&display_lcd_fillTriangle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawCircle),	        MP_ROM_PTR(&display_lcd_drawCircle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillcircle),	        MP_ROM_PTR(&display_lcd_fillCircle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawRect),	        MP_ROM_PTR(&display_lcd_drawRect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillRect),	        MP_ROM_PTR(&display_lcd_fillRect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawRoundRect),	    MP_ROM_PTR(&display_lcd_drawRoundRect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillRoundRect),	    MP_ROM_PTR(&display_lcd_fillRoundRect_obj) },
     { MP_ROM_QSTR(MP_QSTR_print),	            MP_ROM_PTR(&display_lcd_drawString_obj) },
     { MP_ROM_QSTR(MP_QSTR_clear),				MP_ROM_PTR(&display_lcd_clear_obj) },
+
+    { MP_ROM_QSTR(MP_QSTR_drawFastVLine),	    MP_ROM_PTR(&display_lcd_drawFastVLine_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawFastHLine),	    MP_ROM_PTR(&display_lcd_drawFastHLine_obj) },
+
 
 	{ MP_ROM_QSTR(MP_QSTR_BLACK),				MP_ROM_INT(ILI9341_BLACK) },
 	{ MP_ROM_QSTR(MP_QSTR_NAVY),				MP_ROM_INT(ILI9341_NAVY) },
@@ -559,9 +688,6 @@ STATIC const mp_rom_map_elem_t display_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_display) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_LCD), MP_ROM_PTR(&display_lcd_type) },
-    
-    // { MP_ROM_QSTR(MP_QSTR_start),	 MP_ROM_PTR(&display_start_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_fillScreen),	 MP_ROM_PTR(&display_lcd_fillScreen_obj) },
 };
 
 //===============================================================================
