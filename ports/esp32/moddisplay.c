@@ -226,14 +226,14 @@ STATIC mp_obj_t display_lcd_getTextBounds(size_t n_args, const mp_obj_t *pos_arg
     tuple[2] = mp_obj_new_int(w);
     tuple[3] = mp_obj_new_int(h);
 
-    // lcd_getTextWrap(false);
+    // lcd_setTextWrap(false);
 
     return mp_obj_new_tuple(4, tuple);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_getTextBounds_obj, 3, display_lcd_getTextBounds);
 
 //-------------------------------------------------------------------------------------------------
-STATIC mp_obj_t display_lcd_getTextWrap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+STATIC mp_obj_t display_lcd_setTextWrap(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
 
     const mp_arg_t allowed_args[] = {
         { MP_QSTR_w,                   MP_ARG_INT, { .u_int = -1 } },
@@ -248,11 +248,11 @@ STATIC mp_obj_t display_lcd_getTextWrap(size_t n_args, const mp_obj_t *pos_args,
         w = args[0].u_int;
     }
 
-    lcd_getTextWrap(self->lcd_obj, w);
+    lcd_setTextWrap(self->lcd_obj, w);
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_getTextWrap_obj, 0, display_lcd_getTextWrap);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(display_lcd_setTextWrap_obj, 0, display_lcd_setTextWrap);
 
 //----------------------------------------------------------------
 STATIC mp_obj_t display_lcd_drawPixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -683,7 +683,7 @@ STATIC const mp_rom_map_elem_t display_lcd_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_setTextColor),        MP_ROM_PTR(&display_lcd_setTextColor_obj) },
     { MP_ROM_QSTR(MP_QSTR_setTextSize),         MP_ROM_PTR(&display_lcd_setTextSize_obj) },
     { MP_ROM_QSTR(MP_QSTR_getTextBounds),       MP_ROM_PTR(&display_lcd_getTextBounds_obj) },
-    { MP_ROM_QSTR(MP_QSTR_getTextWrap),         MP_ROM_PTR(&display_lcd_getTextWrap_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setTextWrap),         MP_ROM_PTR(&display_lcd_setTextWrap_obj) },
     { MP_ROM_QSTR(MP_QSTR_drawPixel),	        MP_ROM_PTR(&display_lcd_drawPixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_fillScreen),	        MP_ROM_PTR(&display_lcd_fillScreen_obj) },
     { MP_ROM_QSTR(MP_QSTR_drawLine),	        MP_ROM_PTR(&display_lcd_drawLine_obj) },
